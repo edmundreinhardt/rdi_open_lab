@@ -1,0 +1,25 @@
+    A*****************************************************************
+     A*   EMPMST - EMPLOYEE MASTER FILE
+     A*   DESCRIPTION - THIS FILE CONTAINS ONE RECORD FOR EACH EMPLOYEE
+     A*   ENROLLED IN THE TIME REPORTING SYSTEM.  CURRENT MONTH, YEAR TO
+     A*   DATE AND PRIOR YEAR PROJECT AND NON PROJECT RELATED ACTIVITY
+     A*   IS MAINTAINED.
+     A*****************************************************************
+     A                                      UNIQUE
+     A                                      REF(REFMST)
+     A          R RCEMP                     TEXT('EMPLOYEE MASTER')
+     A            ACREC     R
+     A            EMPNO     R
+     A            ENAME     R
+     A            EMCAT     R
+     A            EDEPT     R
+     A            ELOCN     R
+     A            EUSRI     R
+     A            ENHRS     R
+     A            EPHRC     R
+     A            EPHRY     R
+     A            EPHRP     R
+     A            EPNRC     R
+     A            EPNRY     R
+     A            EPNRP     R
+     A          K EMPNO

@@ -1,0 +1,16 @@
+     A*****************************************************************
+     A*   RSNMST - REASON CODE MASTER FILE
+     A*   DESCRIPTION - THIS FILE CONTAINS INFORMATION RELATED TO NON PROJECT
+     A*   ACTIVITY.  CURRENT MONTH, YEAR TO DATE AND PRIOR YEAR ACTIVITY
+     A*   IS MAINTAINED.  ONE RECORD EXISTS FOR EACH REASON CODE.
+     A*****************************************************************
+     A                                      UNIQUE
+     A                                      REF(REFMST)
+     A          R RCRSN                     TEXT('REASON CODE MASTER')
+     A            ACREC     R
+     A            RSCDE     R
+     A            RSDSC     R
+     A            RSHRC     R
+     A            RSHRY     R
+     A            RSHRP     R
+     A          K RSCDE

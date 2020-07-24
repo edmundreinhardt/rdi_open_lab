@@ -1,0 +1,21 @@
+     A*****************************************************************
+     A*   PRJMST - PROJECT MASTER FILE
+     A*   DESCRIPTION - THIS FILE CONTAINS INFORMATION RELATED TO PROJECT
+     A*   ACTIVITY.  CURRENT MONTH, YEAR TO DATE AND PRIOR YEAR ACTIVITY
+     A*   IS MAINTAINED.  ONE RECORD EXISTS FOR EACH PROJECT CODE.
+     A*****************************************************************
+     A                                      UNIQUE
+     A                                      REF(REFMST)
+     A          R RCPRJ                     TEXT('PROJECT MASTER')
+     A            ACREC     R
+     A            PRCDE     R
+     A            PRDSC     R
+     A            PRRSP     R
+     A            PRSTR     R
+     A            PREND     R
+     A            PRCMP     R
+     A            PREST     R
+     A            PRHRC     R
+     A            PRHRY     R
+     A            PRHRP     R
+     A          K PRCDE
