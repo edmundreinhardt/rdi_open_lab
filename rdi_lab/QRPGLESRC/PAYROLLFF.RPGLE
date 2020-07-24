@@ -31,7 +31,6 @@
        //
        //   Compile time array containing error descriptions.
        Dcl-S ERR             Char(50)        DIM(10) CTDATA PERRCD(1);
-       Dcl-s i int(10);
        Dcl-S EMESS           Char(50);
        //
        // *****************************************************
@@ -93,7 +92,7 @@
                Exsr PRJTAG;
        //
              When RSNAPL = 'X';
-               Exsr RSNTAX;
+               Exsr RSNTAG;
            EndSl;
        //  if KC end program
            If *INKC;
@@ -365,8 +364,8 @@
            and RSNAPL = 'X';
        //     THE BUG IS HERE
        //     ***************
-           *IN60 = '2';
-           EMES = ERR(2);
+           *IN60 = '1';
+           EMESS = ERR(2);
          Else;
            *IN60 = '0';
          EndIf;
@@ -399,7 +398,7 @@
            *IN60 = '1';
            EMESS = ERR(1);
          EndIf;
-       //EndSr;
+       EndSr;
        //
        // *******************************************************
        //   ACDESR subroutine verifies the time reporting action codes for
