@@ -1,487 +1,469 @@
-     F************************************************************
-     F*  PROGRAM NAME - Payroll
-     F*  DESCRIPTION - Time reporting master file maintenance using
-     F*                externally described workstation processing.
-     F************************************************************
-     F*  INDICATORS USED
-     F*  50 - No record found on CHAIN operation
-     F*  60 - General error condition
-     F*  90 - Protect display on delete request
-     F*  KC - End of job requested
-     F*  KD - Return to application selection
-     F*  KE - Return to employee selection
-     F*  KF - Return to project selection
-     F*  KG - Return to reason code selection
-     F*  LR - Last record
-     F************************************************************
-     F*  SUBROUTINES USED
-     F*  EDITSL - Edit application selection display (SELECT)
-     F*  ACDESR - Edit action code for all maintenance requests
-     F************************************************************
-     F*  This program uses all externally described files.  Files
-     F*  used are - MSTDSP  - maintenance display file
-     F*           - EMPMST  - employee master file
-     F*           - PRJMST  - project master file
-     F*           - RSNMST  - reason code master file
-     F************************************************************
-     FMSTDSP    CF   E             WORKSTN
-     FEMPMST    UF A E           K DISK
-     FPRJMST    UF A E           K DISK
-     FRSNMST    UF A E           K DISK
-     D*
-     D*  Compile time array containing error descriptions.
-     D ERR             S             50    DIM(10) CTDATA PERRCD(1)
-     D EMESS           S             50
-     E*
-     C******************************************************
-     C*  MAINLINE CALCULATIONS
-     C******************************************************
-     C*  This mainline routine controls the display file processing and
-     C*  editting.  Using the function keys described on each display
-     C*  format, you can transfer from one maintenance application to
-     C*  another.  The action code you select on the selection formats
-     C*  determines if the program will add a new record to the file or
-     C*  update an existing record in the file.
-     C******************************************************
-     C*  Housekeeping, clear display fields and reset indicators.
-     C*
-     C                   EXSR      MAIN
-     C* If MAIN is done program ends
-     C                   eval      *INLR = *on
-      * MAIN SUBROUTINE
-     C     MAIN          BEGSR
-     C                   dou       *INKC
-     C                   EVAL      *IN60  = *OFF
-     C                   EVAL      EMESS  = *BLANK
-     C                   EVAL      EMPAPL = *BLANK
-     C                   EVAL      PRJAPL = *BLANK
-     C                   EVAL      RSNAPL = *BLANK
-     C*
-     C*  Write the SELECT format to display.  If end of job requested,
-     C*
-     C*
-     C                   DOU       not *IN60
-     C                   EXFMT     SELECT
-     C     *INKC         IFEQ      '1'
-     C                   LEAVESR
-     C                   ELSE
-     C                   EXSR      EDITSL
-     C                   END
-     C*
-     C*  IF the general error indicator *IN60 is on (equal to 1), the
-     C*  program continues to loop
-     C*
-     C                   ENDdo
-     C*
-     C*  The application selection fields from the SELECT format are
-     C*  tested and the program will branch to the section specific to
-     C*  that application.
-     C*  If EMPAPL (employee maintenance) equals X, the program
-     C*  branches to label EMPTAG.
-     C*  If PRJAPL (project maintenance) equals X, the program
-     C*  branches to label PRJTAG.
-     C*  If the prior two tests were not successful, you have chosen
-     C*  reason code maintenance.  The program will continue with the
-     C*  next executable operation.
-     C*
-     C                   SELECT
-     C                   when      EMPAPL = 'X'
-     C                   EXSR      EMPTAG
-     C*
-     C                   when      PRJAPL = 'X'
-     C                   EXSR      PRJTAG
-     C*
-     C                   when      RSNAPL = 'X'
-     C                   EXSR      RSNTAX
-     C                   ENDSL
-     C* if KC end program
-     C                   if        *INKC
-     C                   leave
-     C                   endif
-     C                   enddo
-     C                   endsr
-     C*
-     C**********************************************************
-     C*  Reason Code Maintenance.
-     C**********************************************************
-     C*
-     C*  Housekeeping, clear display fields and reset indicators.
-     C*
-     C     RSNTAG        BEGSR
-     C                   DOU       *INKC
-     C                   MOVE      *BLANKS       EMESS
-     C                   MOVE      *BLANKS       RSCDE
-     C                   MOVE      *BLANKS       ACODE
-     C* start of error loop
-     C                   DOU       not *IN60
-     C                   MOVE      *BLANKS       RSDSC
-     C*
-     C*  Display reason code selection format
-     C*
-     C                   EXFMT     RSNSEL
-     C                   IF        *INKD
-     C                   LEAVeSR
-     C                   END
-     C*
-     C*  Access reason code master to validate action code request
-     C*
-     C                   IF        not *INKC
-     C     RSCDE         CHAIN     RSNMST                             50
-     C                   EXSR      ACDESR
-     C                   ELSE
-     C                   LEAVESR
-     C                   END
-     C* end of error loop
-     C                   ENDDO
-     C*
-     C*  Display reason code maintenance format
-     C*
-     C                   EXFMT     RSNMNT
-     C*
-     C                   IF        *INKD
-     C                   LEAVESR
-     C                   END
-     C                   IF        *INKG
-     C                   ITER
-     C                   END
-     C*
-     C*  Determine update mode and perform record add or update
-     C*
-     C                   IF        not *inkc
-     C
-     C                   Select
-     C                   WHEN      ACODE = 'A' and *IN50
-     C                   MOVE      'A'           ACREC
-     C                   WRITE     RCRSN
-     C*
-     C                   WHEN      ACODE = 'A' and not *IN50 and ACREC = 'D'
-     C                   MOVE      'A'           ACREC
-     C                   UPDATE    RCRSN
-     C*
-     C                   When      ACODE = 'D'
-     C                   MOVE      'D'           ACREC
-     C                   UPDATE    RCRSN
-     C*
-     C                   WHEN      ACODE = 'C'
-     C                   UPDATE    RCRSN
-     C                   ENDSL
-     C                   ELSE
-     C                   LEAVESR
-     C                   END
-     C*
-     C*  Your maintenance request has now been completed and the
-     C*  program branches back to the RSNTAG TAG.
-     C*
-     C                   ENDDO
-     C                   ENDsr
-     C**********************************************************
-     C*  Employee master maintenance routine.
-     C**********************************************************
-     C*
-     C*  Housekeeping, clear display fields and reset indicators.
-     C*
-     C     EMPTAG        BEGSR
-     C                   dou       *INKC
-     C                   MOVE      '0'           *IN60
-     C                   MOVE      *BLANKS       EMESS
-     C                   Z-ADD     0             EMPNO
-     C                   MOVE      *BLANKS       ACODE
-     C* error loop start
-     C                   dou       not *IN60
-     C                   MOVE      *BLANKS       ENAME
-     C                   MOVE      *BLANKS       EMCAT
-     C                   MOVE      *BLANKS       EDEPT
-     C                   MOVE      *BLANKS       ELOCN
-     C                   MOVE      *BLANKS       EUSRI
-     C                   Z-ADD     0             ENHRS
-     C*
-     C*  Display employee selection format
-     C*
-     C                   EXFMT     EMPSEL
-     C* leave subroutine
-     C*
-     C                   IF        *INKD
-     C                   leavesr
-     C                   END
-     C*
-     C*  Access employee master to validate action code request
-     C*
-     C                   IF        NOT *INKC
-     C     EMPNO         CHAIN     EMPMST                             50
-     C                   EXSR      ACDESR
-     C                   ELSE
-     C                   LEAVESR
-     C                   END
-     C* end of error loop
-     C                   ENDdo
-     C*
-     C*  Display employee maintenance format
-     C*
-     C                   EXFMT     EMPMNT
-     C                   IF        *INKD
-     C*end of subroutine
-     C                   LEAVESR
-     C                   END
-     C                   IF        *INKE
-     C* End of one loop
-     C                   iter
-     C                   END
-     C*
-     C*  Determine update mode and perform record add or update
-     C*
-     C                   IF        *INKC = *OFF
-     C                   select
-     C                   when      ACODE ='A'  and *IN50
-     C                   MOVE      'A'           ACREC
-     C                   WRITE     RCEMP
-     C*
-     C                   when      ACODE = 'A' and not *IN50 and ACREC = 'D'
-     C                   MOVE      'A'           ACREC
-     C                   UPDATE    RCEMP
-     C*
-     C                   when      ACODE = 'D'
-     C                   MOVE      'D'           ACREC
-     C                   UPDATE    RCEMP
-     C*
-     C                   when      ACODE = 'C'
-     C                   UPDATE    RCEMP
-     C                   ENDsl
-     C                   ELSE
-     C                   LEAVESR
-     C                   END
-     C*
-     C*  Your maintenance request has now been completed and the
-     C*  program branches back to the EMPTAG TAG.
-     C*
-     C                   enddo
-     C                   ENDSR
-     C**********************************************************
-     C*  Project master maintenance routine.
-     C**********************************************************
-     C*
-     C*  Housekeeping, clear display fields and reset indicators.
-     C*
-     C     PRJTAG        begsr
-     C                   DOU       *INKC
-     C                   MOVE      '0'           *IN60
-     C                   MOVE      *BLANKS       EMESS
-     C                   MOVE      *BLANKS       PRCDE
-     C                   MOVE      *BLANKS       ACODE
-     C                   DOU       not *IN60
-     C                   MOVE      *BLANKS       PRDSC
-     C                   MOVE      *BLANKS       PRRSP
-     C                   Z-ADD     0             PRSTR
-     C                   Z-ADD     0             PREND
-     C                   Z-ADD     0             PRCMP
-     C                   Z-ADD     0             PREST
-     C*
-     C*  Display project selection format
-     C*
-     C                   EXFMT     PRJSEL
-     C                   IF        *INKD
-     C                   leavesr
-     C                   END
-     C*
-     C*  Access project master to validate action code request
-     C*
-     C                   IF        not *INKC
-     C     PRCDE         CHAIN     PRJMST                             50
-     C                   EXSR      ACDESR
-     C                   ELSE
-     C                   LEAVESR
-     C                   END
-     C                   ENDdo
-     C*
-     C*  Display project maintenance format
-     C*
-     C                   EXFMT     PRJMNT
-     C* leave subroutine
-     C                   IF        *INKD
-     C                   LEAVESR
-     C                   END
-     C* end of loop
-     C                   IF        *INKF
-     C                   ITER
-     C                   END
-     C*
-     C*  Determine update mode and perform record add or update
-     C*
-     C     *INKC         IFEQ      '0'
-     C                   SELECT
-     C                   WHEN       ACODE = 'A'  and *IN50
-     C                   MOVE      'A'           ACREC
-     C                   WRITE     RCPRJ
-     C*
-     C                   WHEN      ACODE = 'A' and *IN50 and ACREC = 'D'
-     C                   MOVE      'A'           ACREC
-     C                   UPDATE    RCPRJ
-     C* Delete OP
-     C                   WHEN      ACODE = 'D'
-     C                   MOVE      'D'           ACREC
-     C                   UPDATE    RCPRJ
-     C* Change OP
-     C                   WHEN      ACODE = 'C'
-     C                   UPDATE    RCPRJ
-     C                   ENDSL
-     C                   ELSE
-     C                   LEAVESR
-     C                   END
-     C                   ENDDO
-     C*
-     C*  Your maintenance request has now been completed and the
-     C*  program branches back to the PRJTAG TAG.
-     C*
-     C*                  GOTO      PRJTAG
-     C                   endsr
-     C**********************************************************
-     C*  End of job requested.  Control is passed to here when you press
-     C*  F3 (*INKC).  The last record indicator *INLR is set on and the
-     C*  program ends.
-     C*
-     C*                  ENDSR
-     C*
-     C********************************************************
-     C*  EDITSL subroutine verifies the time reoprting application
-     C*  selection display input.
-     C********************************************************
-     C     EDITSL        BEGSR
-     C*
-     C*  Housekeeping, clear display fields and reset indicators.
-     C*
-     C                   MOVE      *BLANKS       EMESS
-     C                   EVAL      *IN60 = *OFF
-     C*
-     C*  The following IF AND OR combination checks the application
-     C*  selection fields to ensure that only one application has been
-     C*  selected.
-     C*
-     C     EMPAPL        IFEQ      'X'
-     C     PRJAPL        ANDEQ     'X'
-     C     EMPAPL        OREQ      'X'
-     C     RSNAPL        ANDEQ     'X'
-     C*    THE BUG IS HERE
-     C*    ***************
-     C                   MOVE      '2'           *IN60
-     C                   MOVE      ERR(2)        EMES
-     C                   ELSE
-     C                   MOVE      '0'           *IN60
-     C                   END
-     C*
-     C*  The following IF AND combination ensures that at least one
-     C*  application has been selected.
-     C*
-     C     EMPAPL        IFEQ      ' '
-     C     PRJAPL        ANDEQ     ' '
-     C     RSNAPL        ANDEQ     ' '
-     C                   MOVE      '1'           *IN60
-     C                   MOVE      ERR(3)        EMESS
-     C                   END
-     C*
-     C*  The following code checks each application selection field to
-     C*  ensure that it is either ' ' (blank) or equal to 'X'.
-     C*
-     C     EMPAPL        IFNE      ' '
-     C     EMPAPL        ANDNE     'X'
-     C                   MOVE      '1'           *IN60
-     C                   MOVE      ERR(1)        EMESS
-     C                   END
-     C     PRJAPL        IFNE      ' '
-     C     PRJAPL        ANDNE     'X'
-     C                   MOVE      '1'           *IN60
-     C                   MOVE      ERR(1)        EMESS
-     C                   END
-     C     RSNAPL        IFNE      ' '
-     C     RSNAPL        ANDNE     'X'
-     C                   MOVE      '1'           *IN60
-     C                   MOVE      ERR(1)        EMESS
-     C                   END
-     C*                  ENDSR
-     C*
-     C********************************************************
-     C*  ACDESR subroutine verifies the time reporting action codes for
-     C*  all maintenance selections.
-     C********************************************************
-     C     ACDESR        BEGSR
-     C*
-     C*  Housekeeping, clear display fields and reset indicators.
-     C*
-     C                   EVAL      EMESS = *BLANKS
-     C                   EVAL      *IN60 = *OFF
-     C                   EVAL      *IN90 = *OFF
-     C*
-     C*  The following  statements perform
-     C*  two functions.  First they determine the type of maintenance
-     C*  requested and branche to the appropriate subroutine and secondly
-     C*  they determine if the maintenance code entered is invalid.
-     C*
-     C                   SELECT
-     C                   WHEN      ACODE = 'A'
-     C                   EXSR      ADDCDE
-     C                   WHEN      ACODE = 'C'
-     C                   EXSR      CHGCDE
-     C                   WHEN      ACODE = 'D'
-     C                   EXSR      DELCDE
-     C                   OTHER
-     C                   EXSR      INVCDE
-     C                   ENDSL
-     C                   ENDSR
-     C*
-     C*  The following code verifies the add request.
-     C*
-     C     ADDCDE        BEGSR
-     C                   IF        NOT *IN50 AND ACREC = 'A'
-     C                   EVAL      *IN60 = *ON
-     C                   MOVE      ERR(5)        EMESS
-     C                   ELSE
-     C                   IF        NOT *IN50 AND ACREC = 'D'
-     C                   MOVE      ERR(6)        EMESS
-     C                   ENDIF
-     C                   ENDIF
-     C                   ENDSR
-     C*
-     C*  The following code verifies the change request.
-     C*
-     C     CHGCDE        BEGSR
-     C                   IF        *IN50
-     C                   EVAL      *IN60 = *ON
-     C                   MOVE      ERR(7)        EMESS
-     C                   ELSE
-     C                   IF        NOT *IN50 AND ACREC = 'D'
-     C                   EVAL      *IN60 = *ON
-     C                   MOVE      ERR(8)        EMESS
-     C                   ENDIF
-     C                   ENDIF
-     C                   ENDSR
-      /FREE
-       //*
-       //*  The following code verifies the delete request.  The field
-       //*  protect indicator *IN90 is first set on (equal to 1) to not
-       //*  allow changes to existing data on a delete request.
-       //*
-       BEGSR DELCDE;
-       *IN90 = *ON;
-       IF *IN50;
-          *IN60 = *ON;
-          EMESS =  ERR(9);
-       ELSE;
-          IF NOT  *IN50 AND ACREC = 'D';
-             *IN60 = *ON;
-             EMESS = ERR(10);
-          ENDIF;
-       ENDIF;
-       ENDSR;
-       //*
-       //*  Invalid action code
-       //*
-       BEGSR INVCDE;
-       *IN60 = *ON;
-       EMESS = ERR(4);
-       ENDSR;
-      /END-FREE
-     O*
-     O*  The compile time array ERR is entered below.  The array is
-     O*  precceded by "** " to denote the beginning of the array.
-     O*
+**FREE
+ctl-opt Dftactgrp(*no);
+//// Full free form version - with errors
+ // ***********************************************************
+ //   PROGRAM NAME - Payroll
+ //   DESCRIPTION - Time reporting master file maintenance using
+ //                 externally described workstation processing.
+ // ***********************************************************
+ //   INDICATORS USED
+ //   50 - No record found on CHAIN operation
+ //   60 - General error condition
+ //   90 - Protect display on delete request
+ //   KC - End of job requested
+ //   KD - Return to application selection
+ //   KE - Return to employee selection
+ //   KF - Return to project selection
+ //   KG - Return to reason code selection
+ //   LR - Last record
+ // ***********************************************************
+ //   SUBROUTINES USED
+ //   ValidateFileToMaintainSelection - Edit application selection display (SELE
+ //   ValidateActionCode - Edit action code for all maintenance requests
+ // ***********************************************************
+ //   This program uses all externally described files.  Files
+ //   used are - MSTDSP  - maintenance display file
+ //            - EMPMST  - employee master file
+ //            - PRJMST  - project master file
+ //            - RSNMST  - reason code master file
+ // ***********************************************************
+ Dcl-F MSTDSP     WORKSTN;
+ Dcl-F EMPMST     Usage(*Update:*Delete:*Output) Keyed;
+ Dcl-F PRJMST     Usage(*Update:*Delete:*Output) Keyed;
+ Dcl-F RSNMST     Usage(*Update:*Delete:*Output) Keyed;
+ //
+ //   Compile time array containing error descriptions.
+ Dcl-S ERR             Char(50)        DIM(10) CTDATA PERRCD(1);
+ Dcl-S EMESS           Char(50);
+
+ Dcl-C INVALID_ACTION_CODE 4;
+ //
+ // *****************************************************
+ //   MAINLINE CALCULATIONS
+ // *****************************************************
+ //   This mainline routine controls the display file processing and
+ //   editting.  Using the function keys described on each display
+ //   format, you can transfer from one maintenance application to
+ //   another.  The action code you select on the selection formats
+ //   determines if the program will add a new record to the file or
+ //   update an existing record in the file.
+ // *****************************************************
+ //   Housekeeping, clear display fields and reset indicators.
+ //
+ CALLP MAIN();
+ //  If MAIN is done program ends
+ *INLR = *on;
+ // *********************************************************
+ //   End of job requested.  Control is passed to here when you press
+ //   F3 (*INKC).  The last record indicator *INLR is set on and the
+ //   program ends.
+ // *******************************************************
+
+
+ //  Main screen - select file to maintain
+ //
+ Dcl-Proc MAIN;
+   DoU *INKC;
+     *IN60  = *OFF;
+     EMESS  = *BLANK;
+     EMPAPL = *BLANK;
+     PRJAPL = *BLANK;
+     RSNAPL = *BLANK;
+     //
+     //   Write the SELECT format to display until end of job requested,
+     //
+     DoU not *IN60;
+       //   IF the general error indicator *IN60 is on (equal to 1), the
+       //   program continues to loop
+       Exfmt SELECT;
+       If *INKC = '1'; // F3 = end of job
+         Return;
+       Else;
+         ValidateFileToMaintainSelection();
+       EndIf;
+     EndDo;
+ //
+ //   The application selection fields from the SELECT format are
+ //   tested and the program will branch to the section specific to
+ //   that application.
+ //   If EMPAPL (employee maintenance) equals X, the program
+ //   branches to  EmployeeMaintenance() proc.
+ //   If PRJAPL (project maintenance) equals X, the program
+ //   branches to ProjectMaintenance() proc
+ //   If the prior two tests were not successful, you have chosen
+ //   reason code maintenance.  The program will continue with the
+ //   next executable operation.
+ //
+     Select;
+       When EMPAPL = 'X';
+         CallP EmployeeMaintenance();
+ //
+       When PRJAPL = 'X';
+         CallP ProjectMaintenance();
+ //
+       When RSNAPL = 'X';
+         ReasonMaintnance();
+     EndSl;
+ //  if KC end program
+     If *INKC;
+       Leave;
+     EndIf;
+   EndDo;
+ End-Proc;
+ //
+ // *********************************************************
+ //   Reason Code Maintenance.
+ // *********************************************************
+ Dcl-Proc ReasonMaintenance;
+   DoU *INKC;
+ //
+ //   Housekeeping, clear display fields and reset indicators.
+ //
+     EMESS = *Blanks;
+     RSCDE = *Blanks;
+     ACODE = *Blanks;
+     //  start of error loop
+     DoU not *IN60;
+       RSDSC = *Blanks;
+ //
+ //   Display reason code selection format
+ //
+       Exfmt RSNSEL;
+       If *INKD;
+         Return;
+       EndIf;
+ //
+ //   Access reason code master to validate action code request
+ //
+       If not *INKC;
+         Chain RSCDE RSNMST;
+         *IN50 = not %Found;
+         CallP ValidateActionCode();
+       Else;
+         Return;
+       EndIf;
+ //  end of error loop
+     EndDo;
+ //
+ //   Display reason code maintenance format
+ //
+     Exfmt RSNMNT;
+ //
+     If *INKD;
+       Return;
+     EndIf;
+     If *INKG;
+       Iter;
+     EndIf;
+ //
+ //   Determine update mode and perform record add or update
+ //
+     If not *inkc;
+ //
+       Select;
+         When ACODE = 'A' and *IN50;
+           ACREC = 'A';
+           Write RCRSN;
+ //
+         When ACODE = 'A' and not *IN50 and ACREC = 'D';
+           ACREC = 'A';
+           Update RCRSN;
+ //
+         When ACODE = 'D';
+           ACREC = 'D';
+           Update RCRSN;
+ //
+         When ACODE = 'C';
+           Update RCRSN;
+       EndSl;
+     Else;
+       Return;
+     EndIf;
+ //
+ //   Your maintenance request has now been completed and the
+ //   program branches back to the ReasonMaintenance loop
+ //
+   EndDo;
+ End-Proc;
+ // *********************************************************
+ //   Employee master maintenance routine.
+ // *********************************************************
+Dcl-Proc EmployeeMaintenance;
+   DoU *INKC;
+ //
+ //   Housekeeping, clear display fields and reset indicators.
+ //
+     *IN60 = '0';
+     EMESS = *Blanks;
+     EMPNO = 0;
+     ACODE = *Blanks;
+ //  error loop start
+     DoU not *IN60;
+       ENAME = *Blanks;
+       EMCAT = *Blanks;
+       EDEPT = *Blanks;
+       ELOCN = *Blanks;
+       EUSRI = *Blanks;
+       ENHRS = 0;
+ //
+ //   Display employee selection format
+ //
+       Exfmt EMPSEL;
+       // Process keys
+       If *INKC;     //F3 = exit program
+         Return;
+       Elseif *INKD; //F4 = return to main screen
+         Return;
+       EndIf;
+       //
+       //   Access employee master to validate action code request
+       //
+       Chain EMPNO EMPMST;
+       *IN50 = not %Found;
+       ValidateActionCode();
+     EndDo;   //  end of error loop
+ //
+ //   Display employee maintenance format
+ //
+     Exfmt EMPMNT;
+     If *INKC;     //F3 = exit program
+       Return;
+     Elseif *INKD; //F4 = return to main screen
+       Return;
+     Elseif *INKE; //F5 = return to employee maintenance screen
+       Iter;
+     EndIf;
+ //
+ //   Determine update mode and perform record add or update
+ //
+       Select;
+         When isAddNewRecordRequest();
+           ACREC = 'A';
+           Write RCEMP;
+         When isAddPreviouslyDeletedRecordRequest();
+           ACREC = 'A';
+           Update RCEMP;
+ // Mark record deleted
+         When ACODE = 'D';
+           ACREC = 'D';
+           Update RCEMP;
+ // Change record
+         When ACODE = 'C';
+           Update RCEMP;
+       EndSl;
+   EndDo;  // EmployeeMainenance screen loop
+ End-Proc;
+
+ // *********************************************************
+ //   Project master maintenance routine.
+ // *********************************************************
+ Dcl-Proc ProjectMaintenance;
+   DoU *INKC;
+ //
+ //   Housekeeping, clear display fields and reset indicators.
+ //
+     *IN60 = '0';
+     EMESS = *Blanks;
+     PRCDE = *Blanks;
+     ACODE = *Blanks;
+     DoU not *IN60;
+       PRDSC = *Blanks;
+       PRRSP = *Blanks;
+       PRSTR = 0;
+       PREND = 0;
+       PRCMP = 0;
+       PREST = 0;
+       //
+       //   Display project selection format
+       //
+       Exfmt PRJSEL;
+       If *INKD;
+         Return;
+       EndIf;
+       //
+       //   Access project master to validate action code request
+       //
+       If not *INKC;
+         Chain PRCDE PRJMST;
+         *IN50 = not %Found;
+         CallP ValidateActionCode();
+       Else;
+         Return;
+       EndIf;
+     EndDo;
+     //
+     //   Display project maintenance format
+     //
+     Exfmt PRJMNT;
+     If *INKD; // F4 = return to main selection
+       Return;
+     EndIf;
+     If *INKF; // F7 = return to project maintenance screen
+       Iter;
+     EndIf;
+     //
+     //   Determine update mode and perform record add or update
+     //
+     If *INKC = '0';
+       Select;
+         // Add of new record
+         When isAddNewRecordRequest();
+           ACREC = 'A';
+           Write RCPRJ;
+         // Add of previously deleted
+         When isAddPreviouslyDeletedRecordRequest();
+           ACREC = 'A';
+           Update RCPRJ;
+         //  Delete OP = just mark record deleted
+         When ACODE = 'D';
+           ACREC = 'D';
+           Update RCPRJ;
+         //  Change OP
+         When ACODE = 'C';
+           Update RCPRJ;
+       EndSl;
+     Else;
+       Return; // F3 = exit
+     EndIf;
+   EndDo; // Project maintenance loop
+ End-Proc;
+
+ // *******************************************************
+ // Return true iff a new record should be added to file
+ Dcl-Proc isAddNewRecordRequest;
+   Dcl-Pi *n ind End-Pi;
+   Return  ACODE = 'A'  and *IN50;
+ End-Proc;
+
+ // *******************************************************
+ // Return true iff a previously record should be readded to file
+ Dcl-Proc isAddPreviouslyDeletedRecordRequest;
+   Dcl-Pi *n ind End-Pi;
+   Return  ACODE = 'A' and not *IN50 and ACREC = 'D';
+ End-Proc;
+
+ // *******************************************************
+ //   ValidateFileToMaintainSelection procedure verifies the time reporting appl
+ Dcl-Proc ValidateFileToMaintainSelection;
+   //
+   //   Housekeeping, clear display fields and reset indicators.
+   //
+   EMESS = *Blanks;
+   *IN60 = *OFF;
+   //
+   //   The following IF AND OR combination checks the application
+   //   selection fields to ensure that only one application has been
+   //   selected.
+   //
+  If EMPAPL = 'X' and PRJAPL = 'X'        or EMPAPL = 'X' and RSNAPL = 'X'      
+     DisplayError(2);
+   EndIf;
+   //
+   //   The following IF AND combination ensures that at least one
+   //   application has been selected.
+   //
+   If    EMPAPL = ' '
+     and PRJAPL = ' '
+     and RSNAPL = ' ';
+     DisplayError(3);
+   EndIf;
+   //
+   //   The following code checks each application selection field to
+   //   ensure that it is either ' ' (blank) or equal to 'X'.
+   //
+   If    EMPAPL <> ' '
+     and EMPAPL <> 'X'
+   or
+         PRJAPL <> ' '
+     and PRJAPL <> 'X'
+   or
+         RSNAPL <> ' '
+     and RSNAPL <> 'X';
+     DisplayError(1);
+   EndIf;
+ End-Proc;
+ //
+ // *******************************************************
+ //   ValidateActionCode procedure verifies the time reporting action codes for
+ //   all maintenance selections.
+ // *******************************************************
+ Dcl-Proc ValidateActionCode;
+ //
+ //   Housekeeping, clear display fields and reset indicators.
+ //
+EMESS = *BLANKS;
+*IN60 = *OFF;
+*IN90 = *OFF;
+//
+//   The following  statements perform
+//   two functions.  First they determine the type of maintenance
+//   requested and branche to the appropriate subroutine and secondly
+//   they determine if the maintenance code entered is invalid.
+//
+Select;
+When ACODE = 'A';
+ValidateAdd();
+When ACODE = 'C';
+ValidateChange();
+When ACODE = 'D';
+ValidateDelete();
+Other;
+DisplayError(INVALID_ACTION_CODE);
+EndSl;
+ End-Proc;
+ //
+ //   The following code verifies the add request.
+ //
+ Dcl-Proc ValidateAdd;
+ If NOT *IN50 AND ACREC = 'A';
+ DisplayError(5);
+ Else;
+ // record found but previously deleted - warning
+ If NOT *IN50 AND ACREC = 'D';
+ EMESS = ERR(6);
+ EndIf;
+ EndIf;
+ End-Proc;
+ //
+ //   The following code verifies the change request.
+ //
+ Dcl-Proc ValidateChange;
+   If *IN50;
+     DisplayError(7);
+   Else;
+     If NOT *IN50 AND ACREC = 'D';
+       DisplayError(8);
+     EndIf;
+   EndIf;
+ End-Proc;
+ //*
+ //*  The following code verifies the delete request.  The field
+ //*  protect indicator *IN90 is first set on (equal to 1) to not
+ //*  allow changes to existing data on a delete request.
+ //*
+ Dcl-Proc ValidateDelete;
+   *IN90 = *ON;
+   IF *IN50;
+     DisplayError(9);
+   ELSE;
+     IF NOT  *IN50 AND ACREC = 'D';
+       DisplayError(10);
+     ENDIF;
+   ENDIF;
+ End-Proc;
+ //
+ // Display error at the bottom of the screen with the given error code
+ Dcl-Proc DisplayError;
+   Dcl-Pi *n;
+     errCode uns(3) const;
+   End-Pi;
+   *IN60 = *ON;
+   EMES = ERR(errCode);
+ End-Proc;
+ //
+ //   The compile time array ERR is entered below.  The array is
+ //   precceded by "** " to denote the beginning of the array.
+ //
 **  Array ERR - Error descriptions
    MAINTENANCE SELECTION CODE NOT EQUAL TO "X"
 MORE THAN ONE APPLICATION SELECTED FOR MAINTENANCE
