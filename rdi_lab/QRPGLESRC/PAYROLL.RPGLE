@@ -1,4 +1,4 @@
-     F*** Contains compile errors ***
+     F*** Compile errors fixed ***
      F************************************************************
      F*  PROGRAM NAME - Payroll
      F*  DESCRIPTION - Time reporting master file maintenance using
@@ -93,7 +93,7 @@
      C                   EXSR      PRJTAG
      C*
      C                   when      RSNAPL = 'X'
-     C                   EXSR      RSNTAX
+     C                   EXSR      RSNTAG
      C                   ENDSL
      C* if KC end program
      C                   if        *INKC
@@ -362,8 +362,8 @@
      C     RSNAPL        ANDEQ     'X'
      C*    THE BUG IS HERE
      C*    ***************
-     C                   MOVE      '2'           *IN60
-     C                   MOVE      ERR(2)        EMES
+     C                   MOVE      '1'           *IN60
+     C                   MOVE      ERR(2)        EMESS
      C                   ELSE
      C                   MOVE      '0'           *IN60
      C                   END
@@ -396,7 +396,7 @@
      C                   MOVE      '1'           *IN60
      C                   MOVE      ERR(1)        EMESS
      C                   END
-     C*                  ENDSR
+     C                   ENDSR
      C*
      C********************************************************
      C*  ACDESR subroutine verifies the time reporting action codes for
