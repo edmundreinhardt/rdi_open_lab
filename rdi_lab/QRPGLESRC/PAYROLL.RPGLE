@@ -102,7 +102,7 @@ ctl-opt Dftactgrp(*no);
          CallP ProjectMaintenance();
  //
        When RSNAPL = 'X';
-         ReasonMaintnance();
+         ReasonMaintenance();
      EndSl;
  //  if KC end program
      If *INKC;
@@ -355,7 +355,9 @@ Dcl-Proc EmployeeMaintenance;
    //   selection fields to ensure that only one application has been
    //   selected.
    //
-  If EMPAPL = 'X' and PRJAPL = 'X'        or EMPAPL = 'X' and RSNAPL = 'X'      
+   If EMPAPL = 'X' and PRJAPL = 'X'
+   or EMPAPL = 'X' and RSNAPL = 'X'
+   or RSNAPL = 'X' and PRJAPL = 'X';     //     this is a very long line that sh
      DisplayError(2);
    EndIf;
    //
@@ -458,7 +460,7 @@ EndSl;
      errCode uns(3) const;
    End-Pi;
    *IN60 = *ON;
-   EMES = ERR(errCode);
+   EMESS = ERR(errCode);
  End-Proc;
  //
  //   The compile time array ERR is entered below.  The array is
