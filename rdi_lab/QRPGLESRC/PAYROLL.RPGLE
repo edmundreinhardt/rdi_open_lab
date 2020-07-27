@@ -1,3 +1,4 @@
+     F*** version with compile/verify errors ***
      F************************************************************
      F*  PROGRAM NAME - Payroll
      F*  DESCRIPTION - Time reporting master file maintenance using
