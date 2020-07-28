@@ -1,6 +1,6 @@
 **FREE
 ctl-opt Dftactgrp(*no);
-//// Full free form version - with errors
+//// Full free form version - with errors   - demoing to RDi team
  // ***********************************************************
  //   PROGRAM NAME - Payroll
  //   DESCRIPTION - Time reporting master file maintenance using
@@ -35,6 +35,8 @@ ctl-opt Dftactgrp(*no);
  //   Compile time array containing error descriptions.
  Dcl-S ERR             Char(50)        DIM(10) CTDATA PERRCD(1);
  Dcl-S EMESS           Char(50);
+
+ Dcl-S i int(3); // unused variable
 
  Dcl-C INVALID_ACTION_CODE 4;
  //
