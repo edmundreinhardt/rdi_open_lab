@@ -36,7 +36,7 @@ ctl-opt Dftactgrp(*no);
  Dcl-S ERR             Char(50)        DIM(10) CTDATA PERRCD(1);
  Dcl-S EMESS           Char(50);
 
- Dcl-S i int(3); // unused variable
+// Dcl-S i int(3); // unused variable
 
  Dcl-C INVALID_ACTION_CODE 4;
  //
