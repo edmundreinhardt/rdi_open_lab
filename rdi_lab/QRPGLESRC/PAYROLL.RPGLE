@@ -1,6 +1,6 @@
 **FREE
 ctl-opt Dftactgrp(*no);
-//// Full free form version - with errors   - demoing to RDi team
+//// Full free form version - with errors
  // ***********************************************************
  //   PROGRAM NAME - Payroll
  //   DESCRIPTION - Time reporting master file maintenance using
