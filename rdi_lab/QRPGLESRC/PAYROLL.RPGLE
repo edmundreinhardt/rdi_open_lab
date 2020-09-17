@@ -1,6 +1,5 @@
 **FREE
 ctl-opt Dftactgrp(*no);
-// Bienvenidos a Heinsohn
 //// Full free form version - with errors
  // ***********************************************************
  //   PROGRAM NAME - Payroll
